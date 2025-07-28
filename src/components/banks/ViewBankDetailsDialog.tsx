@@ -3,12 +3,13 @@
 
 import { Bank } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Landmark, Hash, Asterisk } from 'lucide-react';
+import { Landmark, Hash, Asterisk, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
+import { useState } from 'react';
 
 interface ViewBankDetailsDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface ViewBankDetailsDialogProps {
 const DetailRow = ({ icon, label, value, isSecret = false }: { icon: React.ElementType, label: string, value?: string, isSecret?: boolean }) => {
   const { toast } = useToast();
   const Icon = icon;
+  const [isVisible, setIsVisible] = useState(false);
 
   const handleCopy = () => {
     if(value) {
@@ -31,11 +33,20 @@ const DetailRow = ({ icon, label, value, isSecret = false }: { icon: React.Eleme
     }
   }
 
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
+  };
+
   return (
     <div className="space-y-1">
        <Label className="flex items-center gap-2 text-muted-foreground"><Icon className="h-4 w-4" /> {label}</Label>
       <div className="flex items-center space-x-2">
-        <Input value={value || 'N/A'} readOnly type={isSecret ? 'password' : 'text'} className="font-mono" />
+        <Input value={value || 'N/A'} readOnly type={isSecret && !isVisible ? 'password' : 'text'} className="font-mono" />
+        {isSecret && value && value !== 'N/A' && (
+          <Button variant="ghost" size="icon" onClick={toggleVisibility}>
+            {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        )}
         {value && value !== 'N/A' && <Button variant="outline" size="sm" onClick={handleCopy}>Copy</Button>}
       </div>
     </div>
