@@ -49,15 +49,26 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
   });
 
   useEffect(() => {
-    if (bank) {
-      form.reset({
-        ...bank,
-        netBankingPassword: '', // Don't pre-fill passwords for editing
-        mobileBankingPassword: '',
-        atmPin: '',
-      });
-    } else {
-      form.reset(form.formState.defaultValues);
+    if (open) {
+        if (bank) {
+            form.reset({
+                ...bank,
+                netBankingPassword: '', // Don't pre-fill passwords for editing
+                mobileBankingPassword: '',
+                atmPin: '',
+            });
+        } else {
+            form.reset({
+                bankName: '',
+                phoneForOtp: '',
+                accountNumber: '',
+                netBankingUsername: '',
+                netBankingPassword: '',
+                mobileBankingUsername: '',
+                mobileBankingPassword: '',
+                atmPin: '',
+            });
+        }
     }
   }, [bank, form, open]);
 
