@@ -1,19 +1,14 @@
 [
   {
-    "id": "8f20718e-ac15-4ca3-aa8b-b1da6092e2ac",
-    "bankName": "HDFC",
-    "phoneForOtp": "+15551234567",
-    "accountNumber": "9876543210",
-    "netBankingUsername": "vertex_user",
-    "netBankingPassword": "e1f1a4e4a7b1b5e1a7c8f1e7d2a5c8e3:a3c2b1a1c8e7e3a5a7c4f1e7d2a5c8e3",
-    "mobileBankingUsername": "vertex_mobile",
-    "mobileBankingPassword": "f1e7d2a5c8e3e1f1a4e4a7b1b5e1a7c8:b1a1c8e7e3a5a7c4f1e7d2a5c8e3e1f1",
-    "atmPin": "a3c2b1a1c8e7e3a5a7c4f1e7d2a5c8e3:e1f1a4e4a7b1b5e1a7c8f1e7d2a5c8e3",
-    "customFields": [
-      {
-        "label": "IFSC Code",
-        "value": "21340a1244699a123eec1221c24d5b29:4d5cfb67f2fd32fb1789b5f12154e1878f33ddb9930ade18dd3bee97e1d262c4"
-      }
-    ]
+    "id": "c45fde6a-531a-4f44-8a74-8ede23306f6f",
+    "bankName": "SBI",
+    "phoneForOtp": "+917454849994",
+    "accountNumber": "963258741",
+    "netBankingUsername": "hi1",
+    "netBankingPassword": "025afc15d97169ee79439588ee7e8a83:b30cea150565b950ee566b828cf65aa3",
+    "mobileBankingUsername": "hi2",
+    "mobileBankingPassword": "5d3d3cb88b8a5f0f6bca661ed8ae7e5a:a2696ba38605d9d7422513e83e400370",
+    "atmPin": "a87a2fb97ddbff41e9139857032fa17e:449b08a878f98501019345f0fa26b5ff",
+    "customFields": []
   }
 ]

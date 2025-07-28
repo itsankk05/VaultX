@@ -1,6 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ShieldCheck } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   onAddBank: () => void;
@@ -15,10 +16,13 @@ export default function Header({ onAddBank }: HeaderProps) {
             <ShieldCheck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary">SafeLock</h1>
           </div>
-          <Button onClick={onAddBank}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Bank
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={onAddBank}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Bank
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
