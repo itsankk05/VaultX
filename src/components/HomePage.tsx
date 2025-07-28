@@ -17,6 +17,7 @@ export default function HomePage({ initialBanks }: HomePageProps) {
   const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewOtp' | 'viewDetails' | null>(null);
   const [selectedBank, setSelectedBank] = useState<BankListItem | Bank | null>(null);
   const [unlockedBanks, setUnlockedBanks] = useState<Record<string, Bank>>({});
+  const [nextAction, setNextAction] = useState<'view' | 'edit' | null>(null);
 
   const handleAdd = () => {
     setSelectedBank(null);
@@ -24,8 +25,15 @@ export default function HomePage({ initialBanks }: HomePageProps) {
   };
 
   const handleEdit = (bank: BankListItem) => {
-    setSelectedBank(bank);
-    setDialog('edit');
+    if (unlockedBanks[bank.id]) {
+      // The form dialog expects a BankListItem, so we can use the initial item
+      setSelectedBank(bank);
+      setDialog('edit');
+    } else {
+      setSelectedBank(bank);
+      setNextAction('edit');
+      setDialog('viewOtp');
+    }
   };
 
   const handleDelete = (bank: BankListItem) => {
@@ -39,18 +47,29 @@ export default function HomePage({ initialBanks }: HomePageProps) {
       setDialog('viewDetails');
     } else {
       setSelectedBank(bank);
+      setNextAction('view');
       setDialog('viewOtp');
     }
   };
 
   const handleOtpSuccess = (decryptedBank: Bank) => {
     setUnlockedBanks(prev => ({...prev, [decryptedBank.id]: decryptedBank}));
-    setSelectedBank(decryptedBank);
-    setDialog('viewDetails');
+    
+    if (nextAction === 'edit') {
+      // The form dialog expects a BankListItem, let's find it from the initial list
+      const bankListItem = initialBanks.find(b => b.id === decryptedBank.id);
+      setSelectedBank(bankListItem || decryptedBank);
+      setDialog('edit');
+    } else {
+      setSelectedBank(decryptedBank);
+      setDialog('viewDetails');
+    }
+    setNextAction(null);
   };
   
   const closeDialogs = () => {
     setDialog(null);
+    setNextAction(null);
     // Do not clear selectedBank immediately to avoid flicker
   };
 
