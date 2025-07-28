@@ -73,7 +73,11 @@ export default function HomePage({ initialBanks }: HomePageProps) {
       
       <OtpDialog
         open={dialog === 'viewOtp'}
-        onOpenChange={(isOpen) => !isOpen && closeDialogs()}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && dialog === 'viewOtp') {
+            closeDialogs();
+          }
+        }}
         bank={selectedBank as BankListItem}
         onSuccess={handleOtpSuccess}
       />

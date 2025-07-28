@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "8f20718e-ac15-4ca3-aa8b-b1da6092e2ac",
+    "bankName": "HDFC",
+    "phoneForOtp": "+917454849994",
+    "accountNumber": "1234567890",
+    "netBankingUsername": "ANK",
+    "netBankingPassword": "1427517ced9da1058688a99c77fc2618:d61315261a0b4dd60bf4bcbcc0c19076",
+    "mobileBankingUsername": "ANK",
+    "mobileBankingPassword": "6ba1b8dd70deeaff951e325616196af4:71b45f218713d3c4a17844054262f833",
+    "atmPin": "42460669a81e6e4d9d3ae260f1448497:ac5e173ab11c7955e407bd792c588839"
+  }
+]
