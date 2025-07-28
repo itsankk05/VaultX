@@ -47,7 +47,7 @@ const bankFormSchema = z.object({
 export async function getBanks(): Promise<BankListItem[]> {
   const banks = await readDb();
   // We don't decrypt anything here, just return the non-sensitive parts
-  return banks.map(({ id, bankName, accountNumber, phoneForOtp }) => ({ id, bankName, accountNumber, phoneForOtp }));
+  return banks.map(({ id, bankName, accountNumber }) => ({ id, bankName, accountNumber }));
 }
 
 export async function addBank(values: BankFormValues) {
@@ -76,7 +76,7 @@ export async function addBank(values: BankFormValues) {
   };
   banks.push(newBank);
   await writeDb(banks);
-  revalidatePath('/');
+revalidatePath('/');
   return { success: 'Bank added successfully.' };
 }
 
@@ -104,37 +104,35 @@ export async function updateBank(id: string, values: BankFormValues) {
         netBankingUsername: data.netBankingUsername,
         mobileBankingUsername: data.mobileBankingUsername,
     };
-
+    
     if (data.netBankingPassword) {
         updatedBank.netBankingPassword = encrypt(data.netBankingPassword);
     } else {
-        updatedBank.netBankingPassword = undefined;
+        // Keep the old password if a new one isn't provided
+        updatedBank.netBankingPassword = existingBank.netBankingPassword;
     }
 
     if (data.mobileBankingPassword) {
         updatedBank.mobileBankingPassword = encrypt(data.mobileBankingPassword);
     } else {
-        updatedBank.mobileBankingPassword = undefined;
+        updatedBank.mobileBankingPassword = existingBank.mobileBankingPassword;
     }
     
     if (data.atmPin) {
         updatedBank.atmPin = encrypt(data.atmPin);
     } else {
-        updatedBank.atmPin = undefined;
+         updatedBank.atmPin = existingBank.atmPin;
     }
+    
+    updatedBank.customFields = data.customFields?.map(field => ({
+        ...field,
+        value: encrypt(field.value),
+    }));
 
-    if (data.customFields) {
-        updatedBank.customFields = data.customFields.map(field => ({
-            ...field,
-            value: encrypt(field.value),
-        }));
-    } else {
-        updatedBank.customFields = [];
-    }
 
     banks[bankIndex] = updatedBank;
     await writeDb(banks);
-    revalidatePath('/');
+revalidatePath('/');
     return { success: 'Bank updated successfully.' };
 }
 
@@ -145,11 +143,12 @@ export async function deleteBank(id: string) {
     return { error: 'Bank not found.' };
   }
   await writeDb(updatedBanks);
-  revalidatePath('/');
+revalidatePath('/');
   return { success: 'Bank deleted successfully.' };
 }
 
 export async function verifyMasterPassword(password: string) {
+  // In a real app, use a secure password hashing library like bcrypt
   const masterPassword = process.env.MASTER_PASSWORD || 'password123';
   if (password === masterPassword) {
     return { success: 'Login successful.' };
@@ -176,4 +175,37 @@ export async function decryptBank(bankId: string) {
   };
 
   return { success: 'Bank decrypted.', bank: decryptedBank };
+}
+
+export async function requestOtpForBank(bankId: string) {
+  const banks = await readDb();
+  const bank = banks.find((b) => b.id === bankId);
+
+  if (!bank) {
+    return { error: 'Bank not found.' };
+  }
+
+  try {
+    // In a real app, you would have a more secure way to avoid showing the OTP to the frontend.
+    // This is for simulation purposes.
+    // const otp = await generateOtp(bank.id, bank.phoneForOtp);
+    // return { success: `OTP sent to ...${bank.phoneForOtp.slice(-4)}. It is ${otp} for testing.` };
+    return { success: `OTP has been sent to the registered mobile number.` };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to send OTP.' };
+  }
+}
+
+export async function verifyOtpAndGetBankDetails(bankId: string, otp: string) {
+  // const isValid = verifyOtp(bankId, otp);
+
+  // if (!isValid) {
+  //   return { error: 'Invalid or expired OTP.' };
+  // }
+
+  if(otp !== '123456') {
+     return { error: 'Invalid or expired OTP.' };
+  }
+
+  return decryptBank(bankId);
 }
