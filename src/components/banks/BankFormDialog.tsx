@@ -4,7 +4,7 @@ import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BankFormValues, BankListItem } from '@/lib/types';
+import { Bank, BankFormValues } from '@/lib/types';
 import { addBank, updateBank } from '@/lib/actions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 interface BankFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  bank: BankListItem | null;
+  bank: Bank | null;
 }
 
 const formSchema = z.object({
@@ -50,25 +50,25 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
 
   useEffect(() => {
     if (open) {
-        if (bank) {
-            form.reset({
-                ...bank,
-                netBankingPassword: '', // Don't pre-fill passwords for editing
-                mobileBankingPassword: '',
-                atmPin: '',
-            });
-        } else {
-            form.reset({
-                bankName: '',
-                phoneForOtp: '',
-                accountNumber: '',
-                netBankingUsername: '',
-                netBankingPassword: '',
-                mobileBankingUsername: '',
-                mobileBankingPassword: '',
-                atmPin: '',
-            });
-        }
+      if (bank) {
+          form.reset({
+              ...bank,
+              netBankingPassword: '', // Always clear passwords for security
+              mobileBankingPassword: '',
+              atmPin: '',
+          });
+      } else {
+          form.reset({
+              bankName: '',
+              phoneForOtp: '',
+              accountNumber: '',
+              netBankingUsername: '',
+              netBankingPassword: '',
+              mobileBankingUsername: '',
+              mobileBankingPassword: '',
+              atmPin: '',
+          });
+      }
     }
   }, [bank, form, open]);
 
@@ -124,7 +124,7 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                 name="phoneForOtp"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Phone Number (for OTP)</FormLabel>
+                    <FormLabel>Registered Phone Number</FormLabel>
                     <FormControl>
                       <Input placeholder="+14155552671" {...field} />
                     </FormControl>

@@ -4,35 +4,53 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import BankList from '@/components/banks/BankList';
 import BankFormDialog from '@/components/banks/BankFormDialog';
-import DeleteBankDialog from '@/components/banks/DeleteBankDialog';
-import OtpDialog from '@/components/banks/OtpDialog';
 import ViewBankDetailsDialog from '@/components/banks/ViewBankDetailsDialog';
 import { Bank, BankListItem } from '@/lib/types';
+import LoginScreen from './LoginScreen';
+import { decryptBank } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import DeleteConfirmationDialog from './banks/DeleteConfirmationDialog';
 
 interface HomePageProps {
   initialBanks: BankListItem[];
 }
 
 export default function HomePage({ initialBanks }: HomePageProps) {
-  const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewOtp' | 'viewDetails' | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewDetails' | null>(null);
   const [selectedBank, setSelectedBank] = useState<BankListItem | Bank | null>(null);
-  const [unlockedBanks, setUnlockedBanks] = useState<Record<string, Bank>>({});
-  const [nextAction, setNextAction] = useState<'view' | 'edit' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
 
   const handleAdd = () => {
     setSelectedBank(null);
     setDialog('add');
   };
 
-  const handleEdit = (bank: BankListItem) => {
-    if (unlockedBanks[bank.id]) {
-      // The form dialog expects a BankListItem, so we can use the initial item
-      setSelectedBank(bank);
+  const fetchDecryptedBank = async (bankId: string): Promise<Bank | null> => {
+    setIsLoading(true);
+    try {
+      const result = await decryptBank(bankId);
+      if (result.error || !result.bank) {
+        toast({ title: 'Error', description: result.error || 'Could not retrieve bank details.', variant: 'destructive' });
+        return null;
+      }
+      return result.bank;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = async (bank: BankListItem) => {
+    const decryptedBank = await fetchDecryptedBank(bank.id);
+    if (decryptedBank) {
+      setSelectedBank(decryptedBank);
       setDialog('edit');
-    } else {
-      setSelectedBank(bank);
-      setNextAction('edit');
-      setDialog('viewOtp');
     }
   };
 
@@ -41,40 +59,29 @@ export default function HomePage({ initialBanks }: HomePageProps) {
     setDialog('delete');
   };
 
-  const handleView = (bank: BankListItem) => {
-    if (unlockedBanks[bank.id]) {
-      setSelectedBank(unlockedBanks[bank.id]);
-      setDialog('viewDetails');
-    } else {
-      setSelectedBank(bank);
-      setNextAction('view');
-      setDialog('viewOtp');
-    }
-  };
-
-  const handleOtpSuccess = (decryptedBank: Bank) => {
-    setUnlockedBanks(prev => ({...prev, [decryptedBank.id]: decryptedBank}));
-    
-    if (nextAction === 'edit') {
-      // The form dialog expects a BankListItem, let's find it from the initial list
-      const bankListItem = initialBanks.find(b => b.id === decryptedBank.id);
-      setSelectedBank(bankListItem || decryptedBank);
-      setDialog('edit');
-    } else {
+  const handleView = async (bank: BankListItem) => {
+    const decryptedBank = await fetchDecryptedBank(bank.id);
+    if (decryptedBank) {
       setSelectedBank(decryptedBank);
       setDialog('viewDetails');
     }
-    setNextAction(null);
   };
   
   const closeDialogs = () => {
     setDialog(null);
-    setNextAction(null);
-    // Do not clear selectedBank immediately to avoid flicker
   };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      )}
       <Header onAddBank={handleAdd} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BankList
@@ -88,24 +95,13 @@ export default function HomePage({ initialBanks }: HomePageProps) {
       <BankFormDialog
         open={dialog === 'add' || dialog === 'edit'}
         onOpenChange={(isOpen) => !isOpen && closeDialogs()}
-        bank={dialog === 'edit' ? (selectedBank as BankListItem) : null}
+        bank={dialog === 'edit' ? (selectedBank as Bank) : null}
       />
 
-      <DeleteBankDialog
+      <DeleteConfirmationDialog
         open={dialog === 'delete'}
         onOpenChange={(isOpen) => !isOpen && closeDialogs()}
         bank={selectedBank as BankListItem}
-      />
-      
-      <OtpDialog
-        open={dialog === 'viewOtp'}
-        onOpenChange={(isOpen) => {
-          if (!isOpen && dialog === 'viewOtp') {
-            closeDialogs();
-          }
-        }}
-        bank={selectedBank as BankListItem}
-        onSuccess={handleOtpSuccess}
       />
 
       <ViewBankDetailsDialog

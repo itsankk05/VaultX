@@ -6,7 +6,6 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { Bank, BankFormValues, BankListItem } from './types';
 import { encrypt, decrypt } from './encryption';
-import { generateOtp, verifyOtp } from './otp';
 import { randomUUID } from 'crypto';
 
 const dbPath = path.join(process.cwd(), 'src', 'data', 'banks.json');
@@ -105,27 +104,15 @@ export async function deleteBank(id: string) {
   return { success: 'Bank deleted successfully.' };
 }
 
-export async function requestOtpForBank(bankId: string) {
-  const banks = await readDb();
-  const bank = banks.find((b) => b.id === bankId);
-  if (!bank) {
-    return { error: 'Bank not found.' };
+export async function verifyMasterPassword(password: string) {
+  const masterPassword = process.env.MASTER_PASSWORD || 'password123';
+  if (password === masterPassword) {
+    return { success: 'Login successful.' };
   }
-  try {
-    await generateOtp(bankId, bank.phoneForOtp);
-    // In a real app, you would send the OTP via SMS here.
-    // The success message is generic for security reasons
-    return { success: `An OTP has been sent to the registered phone number.` };
-  } catch (error) {
-    console.error('OTP Error:', error);
-    return { error: 'Failed to send OTP. Please check server configuration.'}
-  }
+  return { error: 'Invalid password.' };
 }
 
-export async function verifyOtpAndGetBankDetails(bankId: string, otp: string) {
-  if (!verifyOtp(bankId, otp)) {
-    return { error: 'Invalid or expired OTP.' };
-  }
+export async function decryptBank(bankId: string) {
   const banks = await readDb();
   const bank = banks.find((b) => b.id === bankId);
   if (!bank) {
@@ -135,9 +122,9 @@ export async function verifyOtpAndGetBankDetails(bankId: string, otp: string) {
   const decryptedBank: Bank = {
     ...bank,
     netBankingPassword: bank.netBankingPassword ? decrypt(bank.netBankingPassword) : 'Not Set',
-    mobileBankingPassword: bank.mobileBankingPassword ? decrypt(bank.mobileBankingPassword) : 'Not Set',
-    atmPin: bank.atmPin ? decrypt(bank.atmPin) : 'Not Set',
+    mobileBankingPassword: bank.mobileBankingPassword ? decrypt(b.mobileBankingPassword) : 'Not Set',
+    atmPin: bank.atmPin ? decrypt(b.atmPin) : 'Not Set',
   };
 
-  return { success: 'OTP verified.', bank: decryptedBank };
+  return { success: 'Bank decrypted.', bank: decryptedBank };
 }
