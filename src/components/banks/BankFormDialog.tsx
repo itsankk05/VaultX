@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Separator } from '../ui/separator';
 
 interface BankFormDialogProps {
@@ -41,6 +41,12 @@ const formSchema = z.object({
 
 export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDialogProps) {
   const [isPending, startTransition] = useTransition();
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    netBanking: false,
+    mobileBanking: false,
+    atmPin: false,
+    custom: {} as Record<number, boolean>,
+  });
   const { toast } = useToast();
   const form = useForm<BankFormValues>({
     resolver: zodResolver(formSchema),
@@ -61,6 +67,18 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
     control: form.control,
     name: "customFields",
   });
+  
+  const togglePasswordVisibility = (field: keyof typeof passwordVisibility, index?: number) => {
+    setPasswordVisibility(prev => {
+      if (field === 'custom' && index !== undefined) {
+        return {
+          ...prev,
+          custom: { ...prev.custom, [index]: !prev.custom[index] }
+        };
+      }
+      return { ...prev, [field]: !prev[field as Exclude<keyof typeof passwordVisibility, 'custom'>] };
+    });
+  };
 
   useEffect(() => {
     if (open) {
@@ -85,6 +103,8 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
               customFields: [],
           });
       }
+      // Reset visibility on open
+      setPasswordVisibility({ netBanking: false, mobileBanking: false, atmPin: false, custom: {} });
     }
   }, [bank, form, open]);
 
@@ -187,9 +207,14 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Net Banking Pass</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input type={passwordVisibility.netBanking ? 'text' : 'password'} placeholder={bank ? "New password" : "Password"} {...field} />
+                        </FormControl>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => togglePasswordVisibility('netBanking')}>
+                          {passwordVisibility.netBanking ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -213,9 +238,14 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Mobile Banking Pass</FormLabel>
+                      <div className="flex items-center gap-2">
                       <FormControl>
-                        <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
+                        <Input type={passwordVisibility.mobileBanking ? 'text' : 'password'} placeholder={bank ? "New password" : "Password"} {...field} />
                       </FormControl>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => togglePasswordVisibility('mobileBanking')}>
+                          {passwordVisibility.mobileBanking ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -227,9 +257,14 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ATM PIN</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="4-digit PIN" maxLength={4} {...field} />
-                    </FormControl>
+                     <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input type={passwordVisibility.atmPin ? 'text' : 'password'} placeholder="4-digit PIN" maxLength={4} {...field} />
+                      </FormControl>
+                       <Button type="button" variant="ghost" size="icon" onClick={() => togglePasswordVisibility('atmPin')}>
+                          {passwordVisibility.atmPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -261,9 +296,14 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                       render={({ field }) => (
                         <FormItem className="flex-1">
                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>Value</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Value" {...field} />
-                          </FormControl>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <Input type={passwordVisibility.custom[index] ? 'text' : 'password'} placeholder="Value" {...field} />
+                              </FormControl>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => togglePasswordVisibility('custom', index)}>
+                                {passwordVisibility.custom[index] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
                            <FormMessage />
                         </FormItem>
                       )}
