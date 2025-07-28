@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { KeyRound, Smartphone, User, Landmark, CreditCard, Hash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface ViewBankDetailsDialogProps {
   open: boolean;
@@ -12,7 +14,7 @@ interface ViewBankDetailsDialogProps {
   bank: Bank | null;
 }
 
-const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
+const DetailRow = ({ label, value }: { label: string, value?: string }) => {
   const { toast } = useToast();
 
   const handleCopy = () => {
@@ -27,15 +29,12 @@ const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, labe
   }
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-md transition-colors hover:bg-muted/50">
-      <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-primary" />
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="font-mono text-base font-medium">{value || 'N/A'}</p>
-        </div>
+    <div className="space-y-2">
+       <Label>{label}</Label>
+      <div className="flex items-center space-x-2">
+        <Input value={value || 'N/A'} readOnly className="font-mono" />
+        {value && <Button variant="outline" size="sm" onClick={handleCopy}>Copy</Button>}
       </div>
-      {value && <Button variant="ghost" size="sm" onClick={handleCopy}>Copy</Button>}
     </div>
   );
 };
@@ -56,13 +55,13 @@ export default function ViewBankDetailsDialog({ open, onOpenChange, bank }: View
             Full credential details. This information is only visible temporarily.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 py-4">
-          <DetailRow icon={Hash} label="Account Number" value={bank.accountNumber} />
-          <DetailRow icon={User} label="Net Banking Username" value={bank.netBankingUsername} />
-          <DetailRow icon={KeyRound} label="Net Banking Password" value={bank.netBankingPassword} />
-          <DetailRow icon={Smartphone} label="Mobile Banking Username" value={bank.mobileBankingUsername} />
-          <DetailRow icon={KeyRound} label="Mobile Banking Password" value={bank.mobileBankingPassword} />
-          <DetailRow icon={CreditCard} label="ATM PIN" value={bank.atmPin} />
+        <div className="space-y-4 py-4">
+          <DetailRow label="Account Number" value={bank.accountNumber} />
+          <DetailRow label="Net Banking Username" value={bank.netBankingUsername} />
+          <DetailRow label="Net Banking Password" value={bank.netBankingPassword} />
+          <DetailRow label="Mobile Banking Username" value={bank.mobileBankingUsername} />
+          <DetailRow label="Mobile Banking Password" value={bank.mobileBankingPassword} />
+          <DetailRow label="ATM PIN" value={bank.atmPin} />
         </div>
       </DialogContent>
     </Dialog>
