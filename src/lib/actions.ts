@@ -112,11 +112,12 @@ export async function requestOtpForBank(bankId: string) {
     return { error: 'Bank not found.' };
   }
   try {
-    const otp = await generateOtp(bankId, bank.phoneForOtp);
+    await generateOtp(bankId, bank.phoneForOtp);
     // In a real app, you would send the OTP via SMS here.
-    return { success: `An OTP has been sent to ${bank.phoneForOtp}.` };
+    // The success message is generic for security reasons
+    return { success: `An OTP has been sent to the registered phone number.` };
   } catch (error) {
-    console.error('Twilio Error:', error);
+    console.error('OTP Error:', error);
     return { error: 'Failed to send OTP. Please check server configuration.'}
   }
 }
