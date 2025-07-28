@@ -81,54 +81,61 @@ export async function addBank(values: BankFormValues) {
 }
 
 export async function updateBank(id: string, values: BankFormValues) {
-  const validatedFields = bankFormSchema.safeParse(values);
-  if (!validatedFields.success) {
-    return { error: 'Invalid data provided.' };
-  }
-  const data = validatedFields.data;
+    const validatedFields = bankFormSchema.safeParse(values);
+    if (!validatedFields.success) {
+        return { error: 'Invalid data provided.' };
+    }
+    const data = validatedFields.data;
 
-  const banks = await readDb();
-  const bankIndex = banks.findIndex((b) => b.id === id);
+    const banks = await readDb();
+    const bankIndex = banks.findIndex((b) => b.id === id);
 
-  if (bankIndex === -1) {
-    return { error: 'Bank not found.' };
-  }
+    if (bankIndex === -1) {
+        return { error: 'Bank not found.' };
+    }
 
-  const existingBank = banks[bankIndex];
-  
-  // Create a base updated bank object with non-optional values
-  const updatedBank: Bank = {
-    ...existingBank,
-    bankName: data.bankName,
-    phoneForOtp: data.phoneForOtp,
-    accountNumber: data.accountNumber,
-    netBankingUsername: data.netBankingUsername,
-    mobileBankingUsername: data.mobileBankingUsername,
-  };
+    const existingBank = banks[bankIndex];
 
-  // Conditionally encrypt and add password/pin fields if they are provided and not empty
-  if (data.netBankingPassword) {
-    updatedBank.netBankingPassword = encrypt(data.netBankingPassword);
-  }
-  if (data.mobileBankingPassword) {
-    updatedBank.mobileBankingPassword = encrypt(data.mobileBankingPassword);
-  }
-  if (data.atmPin) {
-    updatedBank.atmPin = encrypt(data.atmPin);
-  }
+    const updatedBank: Bank = {
+        ...existingBank,
+        bankName: data.bankName,
+        phoneForOtp: data.phoneForOtp,
+        accountNumber: data.accountNumber,
+        netBankingUsername: data.netBankingUsername,
+        mobileBankingUsername: data.mobileBankingUsername,
+    };
 
-  // Encrypt custom fields
-  if (data.customFields) {
-    updatedBank.customFields = data.customFields.map(field => ({
-        ...field,
-        value: encrypt(field.value),
-    }));
-  }
-  
-  banks[bankIndex] = updatedBank;
-  await writeDb(banks);
-  revalidatePath('/');
-  return { success: 'Bank updated successfully.' };
+    if (data.netBankingPassword) {
+        updatedBank.netBankingPassword = encrypt(data.netBankingPassword);
+    } else {
+        updatedBank.netBankingPassword = undefined;
+    }
+
+    if (data.mobileBankingPassword) {
+        updatedBank.mobileBankingPassword = encrypt(data.mobileBankingPassword);
+    } else {
+        updatedBank.mobileBankingPassword = undefined;
+    }
+    
+    if (data.atmPin) {
+        updatedBank.atmPin = encrypt(data.atmPin);
+    } else {
+        updatedBank.atmPin = undefined;
+    }
+
+    if (data.customFields) {
+        updatedBank.customFields = data.customFields.map(field => ({
+            ...field,
+            value: encrypt(field.value),
+        }));
+    } else {
+        updatedBank.customFields = [];
+    }
+
+    banks[bankIndex] = updatedBank;
+    await writeDb(banks);
+    revalidatePath('/');
+    return { success: 'Bank updated successfully.' };
 }
 
 export async function deleteBank(id: string) {
@@ -164,7 +171,7 @@ export async function decryptBank(bankId: string) {
     atmPin: bank.atmPin ? decrypt(bank.atmPin) : 'N/A',
     customFields: bank.customFields?.map(field => ({
       ...field,
-      value: decrypt(field.value),
+      value: field.value ? decrypt(field.value) : 'N/A',
     })),
   };
 

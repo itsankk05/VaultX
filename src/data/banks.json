@@ -1,8 +1,7 @@
-
 [
   {
     "id": "8f20718e-ac15-4ca3-aa8b-b1da6092e2ac",
-    "bankName": "Vertex Bank",
+    "bankName": "HDFC",
     "phoneForOtp": "+15551234567",
     "accountNumber": "9876543210",
     "netBankingUsername": "vertex_user",
@@ -13,7 +12,7 @@
     "customFields": [
       {
         "label": "IFSC Code",
-        "value": "b1a1c8e7e3a5a7c4f1e7d2a5c8e3e1f1:a3c2b1a1c8e7e3a5a7c4f1e7d2a5c8e3"
+        "value": "21340a1244699a123eec1221c24d5b29:4d5cfb67f2fd32fb1789b5f12154e1878f33ddb9930ade18dd3bee97e1d262c4"
       }
     ]
   }
