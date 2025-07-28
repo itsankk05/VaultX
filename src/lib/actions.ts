@@ -1,3 +1,4 @@
+
 'use server';
 
 import fs from 'fs/promises';
@@ -122,8 +123,8 @@ export async function decryptBank(bankId: string) {
   const decryptedBank: Bank = {
     ...bank,
     netBankingPassword: bank.netBankingPassword ? decrypt(bank.netBankingPassword) : 'Not Set',
-    mobileBankingPassword: bank.mobileBankingPassword ? decrypt(b.mobileBankingPassword) : 'Not Set',
-    atmPin: bank.atmPin ? decrypt(b.atmPin) : 'Not Set',
+    mobileBankingPassword: bank.mobileBankingPassword ? decrypt(bank.mobileBankingPassword) : 'Not Set',
+    atmPin: bank.atmPin ? decrypt(bank.atmPin) : 'Not Set',
   };
 
   return { success: 'Bank decrypted.', bank: decryptedBank };
