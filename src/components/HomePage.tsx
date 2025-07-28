@@ -16,6 +16,7 @@ interface HomePageProps {
 export default function HomePage({ initialBanks }: HomePageProps) {
   const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewOtp' | 'viewDetails' | null>(null);
   const [selectedBank, setSelectedBank] = useState<BankListItem | Bank | null>(null);
+  const [unlockedBanks, setUnlockedBanks] = useState<Record<string, Bank>>({});
 
   const handleAdd = () => {
     setSelectedBank(null);
@@ -33,11 +34,17 @@ export default function HomePage({ initialBanks }: HomePageProps) {
   };
 
   const handleView = (bank: BankListItem) => {
-    setSelectedBank(bank);
-    setDialog('viewOtp');
+    if (unlockedBanks[bank.id]) {
+      setSelectedBank(unlockedBanks[bank.id]);
+      setDialog('viewDetails');
+    } else {
+      setSelectedBank(bank);
+      setDialog('viewOtp');
+    }
   };
 
   const handleOtpSuccess = (decryptedBank: Bank) => {
+    setUnlockedBanks(prev => ({...prev, [decryptedBank.id]: decryptedBank}));
     setSelectedBank(decryptedBank);
     setDialog('viewDetails');
   };
