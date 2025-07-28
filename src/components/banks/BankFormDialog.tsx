@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useEffect, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Bank, BankFormValues } from '@/lib/types';
@@ -11,13 +12,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Separator } from '../ui/separator';
 
 interface BankFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bank: Bank | null;
 }
+
+const customFieldSchema = z.object({
+  label: z.string().min(1, 'Label cannot be empty'),
+  value: z.string().min(1, 'Value cannot be empty'),
+});
 
 const formSchema = z.object({
   bankName: z.string().min(2, 'Bank name must be at least 2 characters'),
@@ -28,6 +35,7 @@ const formSchema = z.object({
   mobileBankingUsername: z.string().min(1, 'Username is required'),
   mobileBankingPassword: z.string().optional(),
   atmPin: z.string().regex(/^\d{4}$/, 'ATM PIN must be 4 digits').optional().or(z.literal('')),
+  customFields: z.array(customFieldSchema).optional(),
 });
 
 
@@ -45,7 +53,13 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
       mobileBankingUsername: '',
       mobileBankingPassword: '',
       atmPin: '',
+      customFields: [],
     },
+  });
+  
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "customFields",
   });
 
   useEffect(() => {
@@ -53,6 +67,7 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
       if (bank) {
           form.reset({
               ...bank,
+              customFields: bank.customFields || [],
               netBankingPassword: '', // Always clear passwords for security
               mobileBankingPassword: '',
               atmPin: '',
@@ -67,14 +82,21 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
               mobileBankingUsername: '',
               mobileBankingPassword: '',
               atmPin: '',
+              customFields: [],
           });
       }
     }
   }, [bank, form, open]);
 
   const onSubmit = (values: BankFormValues) => {
+    // Filter out empty custom fields before submission
+    const processedValues = {
+      ...values,
+      customFields: values.customFields?.filter(f => f.label && f.value)
+    };
+    
     startTransition(async () => {
-      const action = bank ? updateBank(bank.id, values) : addBank(values);
+      const action = bank ? updateBank(bank.id, processedValues) : addBank(processedValues);
       const result = await action;
       if (result.error) {
         toast({
@@ -96,7 +118,7 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{bank ? 'Edit Bank' : 'Add Bank'}</DialogTitle>
           <DialogDescription>
@@ -105,25 +127,25 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <FormField
-                control={form.control}
-                name="bankName"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Bank Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Global Bank" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  control={form.control}
+                  name="bankName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bank Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Global Bank" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
                 name="phoneForOtp"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>Registered Phone Number</FormLabel>
                     <FormControl>
                       <Input placeholder="+14155552671" {...field} />
@@ -136,7 +158,7 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                 control={form.control}
                 name="accountNumber"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>Account Number</FormLabel>
                     <FormControl>
                       <Input placeholder="Your account number" {...field} />
@@ -145,63 +167,65 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="netBankingUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Net Banking User</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="netBankingPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Net Banking Pass</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobileBankingUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Banking User</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobileBankingPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Banking Pass</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
-                control={form.control}
-                name="netBankingUsername"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Net Banking User</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="netBankingPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Net Banking Pass</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="mobileBankingUsername"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mobile Banking User</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="mobileBankingPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mobile Banking Pass</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder={bank ? "New password" : "Password"} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
                 control={form.control}
                 name="atmPin"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>ATM PIN</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="4-digit PIN" maxLength={4} {...field} />
@@ -211,6 +235,56 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
                 )}
               />
             </div>
+            
+            <Separator />
+            
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium">Custom Fields</h4>
+              {fields.map((field, index) => (
+                 <div key={field.id} className="flex items-end gap-2">
+                    <FormField
+                      control={form.control}
+                      name={`customFields.${index}.label`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className={index !== 0 ? 'sr-only' : ''}>Label</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Swift Code" {...field} />
+                          </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`customFields.${index}.value`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                           <FormLabel className={index !== 0 ? 'sr-only' : ''}>Value</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Value" {...field} />
+                          </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => append({ label: "", value: "" })}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Custom Field
+              </Button>
+            </div>
+            
             <DialogFooter>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

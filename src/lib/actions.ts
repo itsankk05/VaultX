@@ -27,6 +27,11 @@ async function writeDb(data: Bank[]): Promise<void> {
   await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+const customFieldSchema = z.object({
+  label: z.string().min(1, 'Label cannot be empty'),
+  value: z.string().min(1, 'Value cannot be empty'),
+});
+
 const bankFormSchema = z.object({
   bankName: z.string().min(2, 'Bank name must be at least 2 characters'),
   phoneForOtp: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
@@ -36,11 +41,12 @@ const bankFormSchema = z.object({
   mobileBankingUsername: z.string().min(1, 'Username is required'),
   mobileBankingPassword: z.string().optional(),
   atmPin: z.string().regex(/^\d{4}$/, 'ATM PIN must be 4 digits').optional().or(z.literal('')),
+  customFields: z.array(customFieldSchema).optional(),
 });
 
 export async function getBanks(): Promise<BankListItem[]> {
   const banks = await readDb();
-  return banks.map(({ netBankingPassword, mobileBankingPassword, atmPin, ...bank }) => bank);
+  return banks.map(({ netBankingPassword, mobileBankingPassword, atmPin, customFields, ...bank }) => bank);
 }
 
 export async function addBank(values: BankFormValues) {
@@ -58,6 +64,10 @@ export async function addBank(values: BankFormValues) {
     netBankingPassword: data.netBankingPassword ? encrypt(data.netBankingPassword) : undefined,
     mobileBankingPassword: data.mobileBankingPassword ? encrypt(data.mobileBankingPassword) : undefined,
     atmPin: data.atmPin ? encrypt(data.atmPin) : undefined,
+    customFields: data.customFields?.map(field => ({
+      ...field,
+      value: encrypt(field.value),
+    })),
   };
   banks.push(newBank);
   await writeDb(banks);
@@ -86,6 +96,10 @@ export async function updateBank(id: string, values: BankFormValues) {
     netBankingPassword: data.netBankingPassword ? encrypt(data.netBankingPassword) : existingBank.netBankingPassword,
     mobileBankingPassword: data.mobileBankingPassword ? encrypt(data.mobileBankingPassword) : existingBank.mobileBankingPassword,
     atmPin: data.atmPin ? encrypt(data.atmPin) : existingBank.atmPin,
+    customFields: data.customFields?.map(field => ({
+      ...field,
+      value: encrypt(field.value),
+    })),
   };
   
   banks[bankIndex] = updatedBank;
@@ -125,6 +139,10 @@ export async function decryptBank(bankId: string) {
     netBankingPassword: bank.netBankingPassword ? decrypt(bank.netBankingPassword) : 'Not Set',
     mobileBankingPassword: bank.mobileBankingPassword ? decrypt(bank.mobileBankingPassword) : 'Not Set',
     atmPin: bank.atmPin ? decrypt(bank.atmPin) : 'Not Set',
+    customFields: bank.customFields?.map(field => ({
+      ...field,
+      value: decrypt(field.value),
+    })),
   };
 
   return { success: 'Bank decrypted.', bank: decryptedBank };
