@@ -31,8 +31,8 @@ export default function OtpDialog({ open, onOpenChange, bank, onSuccess }: OtpDi
         } else {
           toast({
             title: 'OTP Sent!',
-            description: `For testing purposes, your OTP is: ${result.otp}`,
-            duration: 10000,
+            description: result.success,
+            duration: 5000,
           });
         }
       });

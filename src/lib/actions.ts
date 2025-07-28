@@ -111,10 +111,14 @@ export async function requestOtpForBank(bankId: string) {
   if (!bank) {
     return { error: 'Bank not found.' };
   }
-  const otp = generateOtp(bankId);
-  // In a real app, you would send the OTP via SMS here.
-  // For simulation, we return it to be shown in a toast.
-  return { success: `OTP sent to ${bank.phoneForOtp}.`, otp };
+  try {
+    const otp = await generateOtp(bankId, bank.phoneForOtp);
+    // In a real app, you would send the OTP via SMS here.
+    return { success: `An OTP has been sent to ${bank.phoneForOtp}.` };
+  } catch (error) {
+    console.error('Twilio Error:', error);
+    return { error: 'Failed to send OTP. Please check server configuration.'}
+  }
 }
 
 export async function verifyOtpAndGetBankDetails(bankId: string, otp: string) {
