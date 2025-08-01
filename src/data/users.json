@@ -15,10 +15,34 @@
         "mobileBankingPassword": "9a385f95f4e17743d4ab37549021e149:ce8c03e6d5b03c80e15266d62d64a275",
         "atmPin": "8e3d231d6706f3535a0f82e6669f9e17:e0f8f8f8e8e8e8e8e8e8e8e8e8e8e8e8",
         "customFields": [
-            {
-                "label": "SWIFT Code",
-                "value": "b5e9e0a0a0e0e0e0a0a0a0a0a0a0a0a0:a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0"
-            }
+          {
+            "label": "SWIFT Code",
+            "value": "b5e9e0a0a0e0e0e0a0a0a0a0a0a0a0a0:a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "e0a852b9-d6bc-4f57-82b9-286c5a250053",
+    "username": "ank05",
+    "masterPassword": "aank12345",
+    "banks": [
+      {
+        "id": "7e2c0123-7829-4ed8-b8f6-24b882cc3d78",
+        "bankName": "HDFC",
+        "phoneForOtp": "+917454849994",
+        "accountNumber": "1234567890",
+        "netBankingUsername": "admin@visionvault.com",
+        "netBankingPassword": "d508580dfb9bba8ea55f815423be2883:68faefd15487e3aa6a7635e6bdf03fbf",
+        "mobileBankingUsername": "admin@visionvault.com",
+        "mobileBankingPassword": "4a59b4cfa0c62c08f9a316e9c1b98b46:95d74f06e6d13db2b032119294703fe8",
+        "atmPin": "9c942b1b245739392b65ce9eeb818a15:a3453efddf4d599b756e04716157ae6d",
+        "customFields": [
+          {
+            "label": "Coperate UserID",
+            "value": "084f814e2abe5ab46b83ac5f9bce27e7:28179f066c7a0e5a4b3aef53b542c976"
+          }
         ]
       }
     ]

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,11 +12,12 @@ import { decryptBank, getBanksForUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import DeleteConfirmationDialog from './banks/DeleteConfirmationDialog';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [banks, setBanks] = useState<BankListItem[]>([]);
-  const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewDetails' | null>(null);
+  const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewDetails' | 'changePassword' | null>(null);
   const [selectedBank, setSelectedBank] = useState<BankListItem | Bank | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -34,6 +36,12 @@ export default function HomePage() {
     const userBanks = await getBanksForUser(currentUser.id);
     setBanks(userBanks);
     setIsLoading(false);
+  };
+  
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setBanks([]);
+    setSelectedBank(null);
   };
 
 
@@ -82,6 +90,11 @@ export default function HomePage() {
     setDialog(null);
     refreshBanks();
   };
+  
+  const closePasswordDialog = () => {
+    setDialog(null);
+    // Optional: add a success message for password change
+  }
 
   if (!currentUser) {
     return <LoginScreen onSuccess={handleLoginSuccess} />;
@@ -94,7 +107,12 @@ export default function HomePage() {
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       )}
-      <Header onAddBank={handleAdd} />
+      <Header 
+        user={currentUser} 
+        onAddBank={handleAdd} 
+        onChangePassword={() => setDialog('changePassword')}
+        onLogout={handleLogout}
+      />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BankList
           banks={banks}
@@ -122,6 +140,12 @@ export default function HomePage() {
         open={dialog === 'viewDetails'}
         onOpenChange={(isOpen) => !isOpen && closeDialogs()}
         bank={selectedBank as Bank}
+      />
+
+      <ChangePasswordDialog
+        open={dialog === 'changePassword'}
+        onOpenChange={(isOpen) => !isOpen && closePasswordDialog()}
+        userId={currentUser.id}
       />
     </>
   );

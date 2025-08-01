@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { Bank, BankFormValues, BankListItem, User } from './types';
+import { Bank, BankFormValues, BankListItem, User, ChangePasswordFormValues } from './types';
 import { encrypt, decrypt } from './encryption';
 import { randomUUID } from 'crypto';
 
@@ -245,4 +245,43 @@ export async function createUser(values: unknown) {
     const { masterPassword, ...userToReturn } = newUser;
 
     return { success: `User '${username}' created successfully! You can now log in.`, user: userToReturn };
+}
+
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+export async function changeMasterPassword(userId: string, values: ChangePasswordFormValues) {
+  const validatedFields = changePasswordSchema.safeParse(values);
+  if (!validatedFields.success) {
+    const firstError = validatedFields.error.errors[0];
+    return { error: `${firstError.path.join('.')}: ${firstError.message}` };
+  }
+
+  const { currentPassword, newPassword } = validatedFields.data;
+  const users = await readDb();
+  const userIndex = users.findIndex((u) => u.id === userId);
+
+  if (userIndex === -1) {
+    return { error: 'User not found.' };
+  }
+
+  const user = users[userIndex];
+  // In a real app, use a secure password hashing library like bcrypt
+  if (user.masterPassword !== currentPassword) {
+    return { error: 'Incorrect current password.' };
+  }
+
+  users[userIndex].masterPassword = newPassword;
+  await writeDb(users);
+
+  return { success: 'Master password updated successfully.' };
 }

@@ -1,4 +1,5 @@
 
+
 export type CustomField = {
   label: string;
   value: string;
@@ -27,3 +28,9 @@ export type User = {
     masterPassword?: string; // This should not be sent to the client
     banks: Bank[];
 }
+
+export type ChangePasswordFormValues = {
+  currentPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+};
