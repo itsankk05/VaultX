@@ -137,10 +137,6 @@ export async function updateBank(userId: string, bankId: string, values: BankFor
     // Process custom fields: update existing, encrypt new
     if (data.customFields) {
         updatedBank.customFields = data.customFields.map(field => {
-            const existingField = existingBank.customFields?.find(f => f.label === field.label);
-            // If value is unchanged, keep existing encrypted value. Otherwise, encrypt new value.
-            // This is a simplification; a real app might need a more robust way to detect changes.
-            // For now, we assume if a value is present, it's new or updated.
             return {
                 ...field,
                 value: encrypt(field.value),
@@ -215,4 +211,38 @@ export async function decryptBank(userId: string, bankId: string) {
   };
 
   return { success: 'Bank decrypted.', bank: decryptedBank };
+}
+
+const createUserSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export async function createUser(values: unknown) {
+    const validatedFields = createUserSchema.safeParse(values);
+    if (!validatedFields.success) {
+        return { error: 'Invalid data provided. Username must be at least 3 characters and password at least 8.' };
+    }
+    const { username, password } = validatedFields.data;
+
+    const users = await readDb();
+
+    const existingUser = users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+    if (existingUser) {
+        return { error: 'Username already taken.' };
+    }
+
+    const newUser: User = {
+        id: randomUUID(),
+        username: username,
+        masterPassword: password, // In a real app, this should be securely hashed
+        banks: [],
+    };
+
+    users.push(newUser);
+    await writeDb(users);
+
+    const { masterPassword, ...userToReturn } = newUser;
+
+    return { success: `User '${username}' created successfully! You can now log in.`, user: userToReturn };
 }
