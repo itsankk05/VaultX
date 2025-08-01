@@ -20,16 +20,17 @@ interface DeleteConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bank: BankListItem | null;
+  userId: string;
 }
 
-export default function DeleteConfirmationDialog({ open, onOpenChange, bank }: DeleteConfirmationDialogProps) {
+export default function DeleteConfirmationDialog({ open, onOpenChange, bank, userId }: DeleteConfirmationDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleDelete = () => {
-    if (!bank) return;
+    if (!bank || !userId) return;
     startTransition(async () => {
-      const result = await deleteBank(bank.id);
+      const result = await deleteBank(userId, bank.id);
       if (result.error) {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
       } else {

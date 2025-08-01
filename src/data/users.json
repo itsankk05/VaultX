@@ -1,0 +1,26 @@
+[
+  {
+    "id": "user-1",
+    "username": "testuser",
+    "masterPassword": "password123",
+    "banks": [
+      {
+        "id": "c45fde6a-531a-4f44-8a74-8ede23306f6f",
+        "bankName": "Global Trust Bank",
+        "phoneForOtp": "+15551234567",
+        "accountNumber": "1122334455",
+        "netBankingUsername": "user_net",
+        "netBankingPassword": "12f977c858546a364177573516643265:d39f40889a742813589b14c7c8449c29",
+        "mobileBankingUsername": "user_mobile",
+        "mobileBankingPassword": "9a385f95f4e17743d4ab37549021e149:ce8c03e6d5b03c80e15266d62d64a275",
+        "atmPin": "8e3d231d6706f3535a0f82e6669f9e17:e0f8f8f8e8e8e8e8e8e8e8e8e8e8e8e8",
+        "customFields": [
+            {
+                "label": "SWIFT Code",
+                "value": "b5e9e0a0a0e0e0e0a0a0a0a0a0a0a0a0:a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0"
+            }
+        ]
+      }
+    ]
+  }
+]

@@ -19,6 +19,7 @@ interface BankFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bank: Bank | null;
+  userId: string;
 }
 
 const customFieldSchema = z.object({
@@ -39,7 +40,7 @@ const formSchema = z.object({
 });
 
 
-export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDialogProps) {
+export default function BankFormDialog({ open, onOpenChange, bank, userId }: BankFormDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [passwordVisibility, setPasswordVisibility] = useState({
     netBanking: false,
@@ -116,7 +117,7 @@ export default function BankFormDialog({ open, onOpenChange, bank }: BankFormDia
     };
     
     startTransition(async () => {
-      const action = bank ? updateBank(bank.id, processedValues) : addBank(processedValues);
+      const action = bank ? updateBank(userId, bank.id, processedValues) : addBank(userId, processedValues);
       const result = await action;
       if (result.error) {
         toast({

@@ -19,4 +19,11 @@ export type Bank = {
 
 export type BankFormValues = Omit<Bank, "id">;
 
-export type BankListItem = Omit<Bank, "netBankingPassword" | "mobileBankingPassword" | "atmPin" | "customFields">;
+export type BankListItem = Pick<Bank, "id" | "bankName" | "accountNumber">;
+
+export type User = {
+    id: string;
+    username: string;
+    masterPassword?: string; // This should not be sent to the client
+    banks: Bank[];
+}

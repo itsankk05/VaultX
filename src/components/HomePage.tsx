@@ -5,27 +5,37 @@ import Header from '@/components/Header';
 import BankList from '@/components/banks/BankList';
 import BankFormDialog from '@/components/banks/BankFormDialog';
 import ViewBankDetailsDialog from '@/components/banks/ViewBankDetailsDialog';
-import { Bank, BankListItem } from '@/lib/types';
+import { Bank, BankListItem, User } from '@/lib/types';
 import LoginScreen from './LoginScreen';
-import { decryptBank } from '@/lib/actions';
+import { decryptBank, getBanksForUser } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import DeleteConfirmationDialog from './banks/DeleteConfirmationDialog';
 
-interface HomePageProps {
-  initialBanks: BankListItem[];
-}
-
-export default function HomePage({ initialBanks }: HomePageProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export default function HomePage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [banks, setBanks] = useState<BankListItem[]>([]);
   const [dialog, setDialog] = useState<'add' | 'edit' | 'delete' | 'viewDetails' | null>(null);
   const [selectedBank, setSelectedBank] = useState<BankListItem | Bank | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
+  const handleLoginSuccess = async (user: User) => {
+    setCurrentUser(user);
+    setIsLoading(true);
+    const userBanks = await getBanksForUser(user.id);
+    setBanks(userBanks);
+    setIsLoading(false);
   };
+  
+  const refreshBanks = async () => {
+    if (!currentUser) return;
+    setIsLoading(true);
+    const userBanks = await getBanksForUser(currentUser.id);
+    setBanks(userBanks);
+    setIsLoading(false);
+  };
+
 
   const handleAdd = () => {
     setSelectedBank(null);
@@ -33,9 +43,10 @@ export default function HomePage({ initialBanks }: HomePageProps) {
   };
 
   const fetchDecryptedBank = async (bankId: string): Promise<Bank | null> => {
+    if (!currentUser) return null;
     setIsLoading(true);
     try {
-      const result = await decryptBank(bankId);
+      const result = await decryptBank(currentUser.id, bankId);
       if (result.error || !result.bank) {
         toast({ title: 'Error', description: result.error || 'Could not retrieve bank details.', variant: 'destructive' });
         return null;
@@ -69,9 +80,10 @@ export default function HomePage({ initialBanks }: HomePageProps) {
   
   const closeDialogs = () => {
     setDialog(null);
+    refreshBanks();
   };
 
-  if (!isAuthenticated) {
+  if (!currentUser) {
     return <LoginScreen onSuccess={handleLoginSuccess} />;
   }
 
@@ -85,7 +97,7 @@ export default function HomePage({ initialBanks }: HomePageProps) {
       <Header onAddBank={handleAdd} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BankList
-          banks={initialBanks}
+          banks={banks}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onView={handleView}
@@ -96,12 +108,14 @@ export default function HomePage({ initialBanks }: HomePageProps) {
         open={dialog === 'add' || dialog === 'edit'}
         onOpenChange={(isOpen) => !isOpen && closeDialogs()}
         bank={dialog === 'edit' ? (selectedBank as Bank) : null}
+        userId={currentUser.id}
       />
 
       <DeleteConfirmationDialog
         open={dialog === 'delete'}
         onOpenChange={(isOpen) => !isOpen && closeDialogs()}
         bank={selectedBank as BankListItem}
+        userId={currentUser.id}
       />
 
       <ViewBankDetailsDialog

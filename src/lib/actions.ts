@@ -5,25 +5,26 @@ import fs from 'fs/promises';
 import path from 'path';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { Bank, BankFormValues, BankListItem } from './types';
+import { Bank, BankFormValues, BankListItem, User } from './types';
 import { encrypt, decrypt } from './encryption';
 import { randomUUID } from 'crypto';
 
-const dbPath = path.join(process.cwd(), 'src', 'data', 'banks.json');
+const dbPath = path.join(process.cwd(), 'src', 'data', 'users.json');
 
-async function readDb(): Promise<Bank[]> {
+async function readDb(): Promise<User[]> {
   try {
     const data = await fs.readFile(dbPath, 'utf-8');
     return JSON.parse(data);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      return []; // Return empty array if file doesn't exist
+      await writeDb([]); // Create the file if it doesn't exist
+      return [];
     }
     throw error;
   }
 }
 
-async function writeDb(data: Bank[]): Promise<void> {
+async function writeDb(data: User[]): Promise<void> {
   await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
@@ -44,13 +45,18 @@ const bankFormSchema = z.object({
   customFields: z.array(customFieldSchema).optional(),
 });
 
-export async function getBanks(): Promise<BankListItem[]> {
-  const banks = await readDb();
-  // We don't decrypt anything here, just return the non-sensitive parts
-  return banks.map(({ id, bankName, accountNumber }) => ({ id, bankName, accountNumber }));
+
+export async function getBanksForUser(userId: string): Promise<BankListItem[]> {
+  const users = await readDb();
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return [];
+  }
+  return user.banks.map(({ id, bankName, accountNumber }) => ({ id, bankName, accountNumber }));
 }
 
-export async function addBank(values: BankFormValues) {
+
+export async function addBank(userId: string, values: BankFormValues) {
   const validatedFields = bankFormSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -58,7 +64,12 @@ export async function addBank(values: BankFormValues) {
   }
   const data = validatedFields.data;
 
-  const banks = await readDb();
+  const users = await readDb();
+  const userIndex = users.findIndex((u) => u.id === userId);
+  if (userIndex === -1) {
+    return { error: 'User not found.' };
+  }
+
   const newBank: Bank = {
     id: randomUUID(),
     bankName: data.bankName,
@@ -74,27 +85,34 @@ export async function addBank(values: BankFormValues) {
       value: encrypt(field.value),
     })),
   };
-  banks.push(newBank);
-  await writeDb(banks);
-revalidatePath('/');
+
+  users[userIndex].banks.push(newBank);
+  await writeDb(users);
+  revalidatePath('/');
   return { success: 'Bank added successfully.' };
 }
 
-export async function updateBank(id: string, values: BankFormValues) {
+export async function updateBank(userId: string, bankId: string, values: BankFormValues) {
     const validatedFields = bankFormSchema.safeParse(values);
     if (!validatedFields.success) {
         return { error: 'Invalid data provided.' };
     }
     const data = validatedFields.data;
 
-    const banks = await readDb();
-    const bankIndex = banks.findIndex((b) => b.id === id);
+    const users = await readDb();
+    const userIndex = users.findIndex((u) => u.id === userId);
+
+    if (userIndex === -1) {
+        return { error: 'User not found.' };
+    }
+
+    const bankIndex = users[userIndex].banks.findIndex((b) => b.id === bankId);
 
     if (bankIndex === -1) {
         return { error: 'Bank not found.' };
     }
 
-    const existingBank = banks[bankIndex];
+    const existingBank = users[userIndex].banks[bankIndex];
 
     const updatedBank: Bank = {
         ...existingBank,
@@ -105,64 +123,86 @@ export async function updateBank(id: string, values: BankFormValues) {
         mobileBankingUsername: data.mobileBankingUsername,
     };
     
+    // Only update password if a new one is provided
     if (data.netBankingPassword) {
         updatedBank.netBankingPassword = encrypt(data.netBankingPassword);
-    } else {
-        // Keep the old password if a new one isn't provided
-        updatedBank.netBankingPassword = existingBank.netBankingPassword;
     }
-
     if (data.mobileBankingPassword) {
         updatedBank.mobileBankingPassword = encrypt(data.mobileBankingPassword);
-    } else {
-        updatedBank.mobileBankingPassword = existingBank.mobileBankingPassword;
     }
-    
     if (data.atmPin) {
         updatedBank.atmPin = encrypt(data.atmPin);
-    } else {
-         updatedBank.atmPin = existingBank.atmPin;
     }
-    
-    updatedBank.customFields = data.customFields?.map(field => ({
-        ...field,
-        value: encrypt(field.value),
-    }));
 
+    // Process custom fields: update existing, encrypt new
+    if (data.customFields) {
+        updatedBank.customFields = data.customFields.map(field => {
+            const existingField = existingBank.customFields?.find(f => f.label === field.label);
+            // If value is unchanged, keep existing encrypted value. Otherwise, encrypt new value.
+            // This is a simplification; a real app might need a more robust way to detect changes.
+            // For now, we assume if a value is present, it's new or updated.
+            return {
+                ...field,
+                value: encrypt(field.value),
+            };
+        });
+    }
 
-    banks[bankIndex] = updatedBank;
-    await writeDb(banks);
-revalidatePath('/');
+    users[userIndex].banks[bankIndex] = updatedBank;
+    await writeDb(users);
+    revalidatePath('/');
     return { success: 'Bank updated successfully.' };
 }
 
-export async function deleteBank(id: string) {
-  const banks = await readDb();
-  const updatedBanks = banks.filter((b) => b.id !== id);
-  if (banks.length === updatedBanks.length) {
-    return { error: 'Bank not found.' };
+export async function deleteBank(userId: string, bankId: string) {
+  const users = await readDb();
+  const userIndex = users.findIndex((u) => u.id === userId);
+
+  if (userIndex === -1) {
+      return { error: 'User not found.' };
   }
-  await writeDb(updatedBanks);
-revalidatePath('/');
+
+  const initialBankCount = users[userIndex].banks.length;
+  users[userIndex].banks = users[userIndex].banks.filter((b) => b.id !== bankId);
+
+  if (users[userIndex].banks.length === initialBankCount) {
+      return { error: 'Bank not found.' };
+  }
+
+  await writeDb(users);
+  revalidatePath('/');
   return { success: 'Bank deleted successfully.' };
 }
 
-export async function verifyMasterPassword(password: string) {
-  // In a real app, use a secure password hashing library like bcrypt
-  const masterPassword = process.env.MASTER_PASSWORD || 'password123';
-  if (password === masterPassword) {
-    return { success: 'Login successful.' };
+export async function verifyMasterPassword(username: string, password: string) {
+  if (!username || !password) {
+    return { error: 'Username and password are required.' };
   }
-  return { error: 'Invalid password.' };
+  const users = await readDb();
+  const user = users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+
+  // In a real app, use a secure password hashing library like bcrypt
+  if (user && user.masterPassword === password) {
+    // Return a copy of the user object without the sensitive data
+    const { masterPassword, ...userToReturn } = user;
+    return { success: 'Login successful.', user: userToReturn };
+  }
+
+  return { error: 'Invalid username or password.' };
 }
 
-export async function decryptBank(bankId: string) {
-  const banks = await readDb();
-  const bank = banks.find((b) => b.id === bankId);
+export async function decryptBank(userId: string, bankId: string) {
+  const users = await readDb();
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return { error: 'User not found.' };
+  }
+
+  const bank = user.banks.find((b) => b.id === bankId);
   if (!bank) {
     return { error: 'Bank not found.' };
   }
-
+  
   const decryptedBank: Bank = {
     ...bank,
     netBankingPassword: bank.netBankingPassword ? decrypt(bank.netBankingPassword) : 'N/A',
@@ -175,37 +215,4 @@ export async function decryptBank(bankId: string) {
   };
 
   return { success: 'Bank decrypted.', bank: decryptedBank };
-}
-
-export async function requestOtpForBank(bankId: string) {
-  const banks = await readDb();
-  const bank = banks.find((b) => b.id === bankId);
-
-  if (!bank) {
-    return { error: 'Bank not found.' };
-  }
-
-  try {
-    // In a real app, you would have a more secure way to avoid showing the OTP to the frontend.
-    // This is for simulation purposes.
-    // const otp = await generateOtp(bank.id, bank.phoneForOtp);
-    // return { success: `OTP sent to ...${bank.phoneForOtp.slice(-4)}. It is ${otp} for testing.` };
-    return { success: `OTP has been sent to the registered mobile number.` };
-  } catch (error: any) {
-    return { error: error.message || 'Failed to send OTP.' };
-  }
-}
-
-export async function verifyOtpAndGetBankDetails(bankId: string, otp: string) {
-  // const isValid = verifyOtp(bankId, otp);
-
-  // if (!isValid) {
-  //   return { error: 'Invalid or expired OTP.' };
-  // }
-
-  if(otp !== '123456') {
-     return { error: 'Invalid or expired OTP.' };
-  }
-
-  return decryptBank(bankId);
 }

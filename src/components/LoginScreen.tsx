@@ -4,15 +4,18 @@ import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { verifyMasterPassword } from '@/lib/actions';
+import { User } from '@/lib/types';
+import { Label } from '@/components/ui/label';
 
 interface LoginScreenProps {
-  onSuccess: () => void;
+  onSuccess: (user: User) => void;
 }
 
 export default function LoginScreen({ onSuccess }: LoginScreenProps) {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -20,10 +23,10 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
-      const result = await verifyMasterPassword(password);
-      if (result.success) {
+      const result = await verifyMasterPassword(username, password);
+      if (result.success && result.user) {
         toast({ title: 'Success!', description: 'Logged in successfully.', className: 'bg-green-500 text-white' });
-        onSuccess();
+        onSuccess(result.user);
       } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
       }
@@ -38,22 +41,40 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
             <ShieldCheck className="h-10 w-10 text-primary" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">SafeLock</CardTitle>
-          <CardDescription>Enter your master password to unlock your vault.</CardDescription>
+          <CardDescription>Enter your credentials to unlock your vault.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
-            <Input
-              id="password"
-              type="password"
-              placeholder="Master Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isPending}
-              className="h-12 text-center text-lg"
-            />
+             <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        id="username"
+                        type="text"
+                        placeholder="Your username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={isPending}
+                        className="pl-10 h-12 text-lg"
+                    />
+                </div>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="password">Master Password</Label>
+                <Input
+                id="password"
+                type="password"
+                placeholder="Your master password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isPending}
+                className="h-12 text-lg"
+                />
+            </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full h-12 text-lg" disabled={isPending || !password}>
+            <Button type="submit" className="w-full h-12 text-lg" disabled={isPending || !password || !username}>
               {isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               Unlock
             </Button>
