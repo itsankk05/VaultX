@@ -44,7 +44,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <ShieldCheck className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold text-primary">SafeLock</CardTitle>
+            <CardTitle className="text-3xl font-bold text-primary">VaultX</CardTitle>
             <CardDescription>Enter your credentials to unlock your vault.</CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>

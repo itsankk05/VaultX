@@ -143,7 +143,7 @@ export default function BankFormDialog({ open, onOpenChange, bank, userId }: Ban
         <DialogHeader>
           <DialogTitle>{bank ? 'Edit Bank' : 'Add Bank'}</DialogTitle>
           <DialogDescription>
-            {bank ? 'Update the details for this bank account.' : 'Add a new bank account to your SafeLock.'}
+            {bank ? 'Update the details for this bank account.' : 'Add a new bank account to your VaultX.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

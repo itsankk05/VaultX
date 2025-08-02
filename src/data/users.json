@@ -46,5 +46,24 @@
         ]
       }
     ]
+  },
+  {
+    "id": "0bc2c2a4-b23f-41c2-a06a-67d5db65c319",
+    "username": "ank02",
+    "masterPassword": "aank12345",
+    "banks": [
+      {
+        "id": "cfa4a9af-5ee7-4d99-ba10-9d14794bec73",
+        "bankName": "fdsfdf",
+        "phoneForOtp": "+917454849994",
+        "accountNumber": "9876543210",
+        "netBankingUsername": "ank05",
+        "netBankingPassword": "052431df2aae56fe2d8b3b174227bfab:3bb45a4890cc610a50dfdf0ab2b21f4e",
+        "mobileBankingUsername": "admin@visionvault.com",
+        "mobileBankingPassword": "4a9eda8c5a6b7c5001f52c336420c873:e3698b27536d6b5c5f1e860fd27344d7",
+        "atmPin": "684d8f49c66091f5e92cf5b852834f91:19550f42467d8da83af0cba762f5c3e6",
+        "customFields": []
+      }
+    ]
   }
 ]

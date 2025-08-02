@@ -37,7 +37,7 @@ export default function Header({ user, onAddBank, onChangePassword, onLogout }: 
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">SafeLock</h1>
+            <h1 className="text-2xl font-bold text-primary">VaultX</h1>
           </div>
           <div className="flex items-center gap-4">
             <Button onClick={onAddBank}>

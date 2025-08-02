@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
 export const metadata: Metadata = {
-  title: 'SafeLock',
+  title: 'VaultX',
   description: 'Secure Personal Banking Login Manager',
 };
 
